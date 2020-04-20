@@ -22,7 +22,7 @@ import (
 	"github.com/hyperledger/fabric/common/metrics/disabled"
 	"github.com/hyperledger/fabric/common/metrics/prometheus"
 	"github.com/hyperledger/fabric/common/metrics/statsd"
-	prom "github.com/prometheus/client_golang/prometheus"
+	prom "github.com/prometheus/client_golang/prometheus/promhttp"
 )
 
 // System is an operations server that is responsible for metrics and health checks
@@ -159,7 +159,7 @@ func (s *System) startMetricsTickers() error {
 		writeInterval := s.options.Metrics.Statsd.WriteInterval
 
 		s.sendTicker = time.NewTicker(writeInterval)
-		go s.statsd.SendLoop(s.sendTicker.C, network, address)
+		go s.statsd.SendLoop(nil, s.sendTicker.C, network, address)
 	}
 
 	return nil

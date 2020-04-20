@@ -12,10 +12,10 @@ import (
 	"strings"
 
 	"github.com/cloudflare/cfssl/log"
-	"github.com/go-sql-driver/mysql"
+	"github.com/zcqzcg/mysql"
+	tls "github.com/hyperledger/fabric-ca/lib/gmtls"
 	"github.com/hyperledger/fabric-ca/lib/server/db"
 	"github.com/hyperledger/fabric-ca/lib/server/db/util"
-	"github.com/hyperledger/fabric-ca/lib/tls"
 	"github.com/hyperledger/fabric/bccsp"
 	"github.com/jmoiron/sqlx"
 	"github.com/pkg/errors"

@@ -13,9 +13,9 @@ import (
 	"strings"
 
 	"github.com/cloudflare/cfssl/log"
+	tls "github.com/hyperledger/fabric-ca/lib/gmtls"
 	"github.com/hyperledger/fabric-ca/lib/server/db"
 	"github.com/hyperledger/fabric-ca/lib/server/db/util"
-	"github.com/hyperledger/fabric-ca/lib/tls"
 	"github.com/jmoiron/sqlx"
 	_ "github.com/lib/pq" // import to support Postgres
 	"github.com/pkg/errors"

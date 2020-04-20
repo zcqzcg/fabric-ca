@@ -9,11 +9,11 @@ package factory
 import (
 	"context"
 
+	tls "github.com/hyperledger/fabric-ca/lib/gmtls"
 	"github.com/hyperledger/fabric-ca/lib/server/db"
 	"github.com/hyperledger/fabric-ca/lib/server/db/mysql"
 	"github.com/hyperledger/fabric-ca/lib/server/db/postgres"
 	"github.com/hyperledger/fabric-ca/lib/server/db/sqlite"
-	"github.com/hyperledger/fabric-ca/lib/tls"
 	"github.com/hyperledger/fabric/bccsp"
 	"github.com/pkg/errors"
 )

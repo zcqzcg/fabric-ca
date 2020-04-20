@@ -7,8 +7,8 @@ SPDX-License-Identifier: Apache-2.0
 package lib
 
 import (
+	tls "github.com/hyperledger/fabric-ca/lib/gmtls"
 	"github.com/hyperledger/fabric-ca/lib/server/operations"
-	"github.com/hyperledger/fabric-ca/lib/tls"
 )
 
 const (

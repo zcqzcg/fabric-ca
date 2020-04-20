@@ -89,7 +89,7 @@ func TestGetClientTLSConfigInvalidArgs(t *testing.T) {
 	AbsTLSClient(cfg, configDir)
 	_, err = GetClientTLSConfig(cfg, nil)
 	assert.Error(t, err)
-	assert.Contains(t, err.Error(), "No trusted root certificates for TLS were provided")
+	assert.Contains(t, err.Error(), "No TLS certificate files were provided")
 
 	// 3.
 	cfg = &ClientTLSConfig{
@@ -114,7 +114,7 @@ func TestGetClientTLSConfigInvalidArgs(t *testing.T) {
 	}
 	_, err = GetClientTLSConfig(cfg, nil)
 	assert.Error(t, err)
-	assert.Contains(t, err.Error(), "No trusted root certificates for TLS were provided")
+	assert.Contains(t, err.Error(), "No TLS certificate files were provided")
 
 	// 5.
 	cfg = &ClientTLSConfig{
@@ -170,7 +170,7 @@ func TestCheckCertDates(t *testing.T) {
 func createTestCertificate() error {
 	// Dynamically create a certificate with future valid date for testing purposes
 	certTemplate := &x509.Certificate{
-		IsCA:                  true,
+		IsCA: true,
 		BasicConstraintsValid: true,
 		SubjectKeyId:          []byte{1, 2, 3},
 		SerialNumber:          big.NewInt(1234),

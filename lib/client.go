@@ -12,13 +12,15 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net"
-	"net/http"
+	//"net/http"
 	"net/url"
 	"os"
 	"path"
 	"path/filepath"
 	"strconv"
 	"strings"
+
+	httpGm "github.com/hyperledger/fabric-ca/http-gm"
 
 	cfsslapi "github.com/cloudflare/cfssl/api"
 	"github.com/cloudflare/cfssl/csr"
@@ -30,8 +32,8 @@ import (
 	idemixcred "github.com/hyperledger/fabric-ca/lib/client/credential/idemix"
 	x509cred "github.com/hyperledger/fabric-ca/lib/client/credential/x509"
 	"github.com/hyperledger/fabric-ca/lib/common"
+	tls "github.com/hyperledger/fabric-ca/lib/gmtls"
 	"github.com/hyperledger/fabric-ca/lib/streamer"
-	"github.com/hyperledger/fabric-ca/lib/tls"
 	"github.com/hyperledger/fabric-ca/util"
 	"github.com/hyperledger/fabric/bccsp"
 	"github.com/hyperledger/fabric/idemix"
@@ -52,7 +54,7 @@ type Client struct {
 	// The crypto service provider (BCCSP)
 	csp bccsp.BCCSP
 	// HTTP client associated with this Fabric CA client
-	httpClient *http.Client
+	httpClient *httpGm.Client
 	// Public key of Idemix issuer
 	issuerPublicKey *idemix.IssuerPublicKey
 }
@@ -130,7 +132,7 @@ func (c *Client) Init() error {
 		if err != nil {
 			return err
 		}
-		// Create http.Client object and associate it with this client
+		// Create httpGm.Client object and associate it with this client
 		err = c.initHTTPClient()
 		if err != nil {
 			return err
@@ -139,11 +141,12 @@ func (c *Client) Init() error {
 		// Successfully initialized the client
 		c.initialized = true
 	}
+	SetProviderName(c.Config.CSP.ProviderName)
 	return nil
 }
 
 func (c *Client) initHTTPClient() error {
-	tr := new(http.Transport)
+	tr := new(httpGm.Transport)
 	if c.Config.TLS.Enabled {
 		log.Info("TLS Enabled")
 
@@ -160,7 +163,7 @@ func (c *Client) initHTTPClient() error {
 		tlsConfig.CipherSuites = tls.DefaultCipherSuites
 		tr.TLSClientConfig = tlsConfig
 	}
-	c.httpClient = &http.Client{Transport: tr}
+	c.httpClient = &httpGm.Client{Transport: tr}
 	return nil
 }
 
@@ -213,7 +216,14 @@ func (c *Client) GenCSR(req *api.CSRInfo, id string) ([]byte, bccsp.Key, error) 
 		return nil, nil, err
 	}
 
-	csrPEM, err := csr.Generate(cspSigner, cr)
+	var csrPEM []byte
+	if IsGMConfig() {
+		csrPEM, err = generate(cspSigner, cr, key)
+
+	} else {
+		csrPEM, err = csr.Generate(cspSigner, cr)
+	}
+
 	if err != nil {
 		log.Debugf("failed generating CSR: %s", err)
 		return nil, nil, err
@@ -390,7 +400,7 @@ func (c *Client) handleIdemixEnroll(req *api.EnrollmentRequest) (*EnrollmentResp
 // identity's X509 credential, and adds the token to the HTTP request. The loaded
 // identity is passed back to the caller.
 func (c *Client) addAuthHeaderForIdemixEnroll(req *api.EnrollmentRequest, id *Identity,
-	body []byte, post *http.Request) error {
+	body []byte, post *httpGm.Request) error {
 	if req.Name != "" && req.Secret != "" {
 		post.SetBasicAuth(req.Name, req.Secret)
 		return nil
@@ -661,12 +671,12 @@ func (c *Client) GetIssuerPubKey() (*idemix.IssuerPublicKey, error) {
 }
 
 // newGet create a new GET request
-func (c *Client) newGet(endpoint string) (*http.Request, error) {
+func (c *Client) newGet(endpoint string) (*httpGm.Request, error) {
 	curl, err := c.getURL(endpoint)
 	if err != nil {
 		return nil, err
 	}
-	req, err := http.NewRequest("GET", curl, bytes.NewReader([]byte{}))
+	req, err := httpGm.NewRequest("GET", curl, bytes.NewReader([]byte{}))
 	if err != nil {
 		return nil, errors.Wrapf(err, "Failed creating GET request for %s", curl)
 	}
@@ -674,12 +684,12 @@ func (c *Client) newGet(endpoint string) (*http.Request, error) {
 }
 
 // newPut create a new PUT request
-func (c *Client) newPut(endpoint string, reqBody []byte) (*http.Request, error) {
+func (c *Client) newPut(endpoint string, reqBody []byte) (*httpGm.Request, error) {
 	curl, err := c.getURL(endpoint)
 	if err != nil {
 		return nil, err
 	}
-	req, err := http.NewRequest("PUT", curl, bytes.NewReader(reqBody))
+	req, err := httpGm.NewRequest("PUT", curl, bytes.NewReader(reqBody))
 	if err != nil {
 		return nil, errors.Wrapf(err, "Failed creating PUT request for %s", curl)
 	}
@@ -687,12 +697,12 @@ func (c *Client) newPut(endpoint string, reqBody []byte) (*http.Request, error) 
 }
 
 // newDelete create a new DELETE request
-func (c *Client) newDelete(endpoint string) (*http.Request, error) {
+func (c *Client) newDelete(endpoint string) (*httpGm.Request, error) {
 	curl, err := c.getURL(endpoint)
 	if err != nil {
 		return nil, err
 	}
-	req, err := http.NewRequest("DELETE", curl, bytes.NewReader([]byte{}))
+	req, err := httpGm.NewRequest("DELETE", curl, bytes.NewReader([]byte{}))
 	if err != nil {
 		return nil, errors.Wrapf(err, "Failed creating DELETE request for %s", curl)
 	}
@@ -700,12 +710,12 @@ func (c *Client) newDelete(endpoint string) (*http.Request, error) {
 }
 
 // NewPost create a new post request
-func (c *Client) newPost(endpoint string, reqBody []byte) (*http.Request, error) {
+func (c *Client) newPost(endpoint string, reqBody []byte) (*httpGm.Request, error) {
 	curl, err := c.getURL(endpoint)
 	if err != nil {
 		return nil, err
 	}
-	req, err := http.NewRequest("POST", curl, bytes.NewReader(reqBody))
+	req, err := httpGm.NewRequest("POST", curl, bytes.NewReader(reqBody))
 	if err != nil {
 		return nil, errors.Wrapf(err, "Failed posting to %s", curl)
 	}
@@ -713,7 +723,7 @@ func (c *Client) newPost(endpoint string, reqBody []byte) (*http.Request, error)
 }
 
 // SendReq sends a request to the fabric-ca-server and fills in the result
-func (c *Client) SendReq(req *http.Request, result interface{}) (err error) {
+func (c *Client) SendReq(req *httpGm.Request, result interface{}) (err error) {
 
 	reqStr := util.HTTPRequestToString(req)
 	log.Debugf("Sending request\n%s", reqStr)
@@ -779,7 +789,7 @@ func (c *Client) SendReq(req *http.Request, result interface{}) (err error) {
 }
 
 // StreamResponse reads the response as it comes back from the server
-func (c *Client) StreamResponse(req *http.Request, stream string, cb func(*json.Decoder) error) (err error) {
+func (c *Client) StreamResponse(req *httpGm.Request, stream string, cb func(*json.Decoder) error) (err error) {
 
 	reqStr := util.HTTPRequestToString(req)
 	log.Debugf("Sending request\n%s", reqStr)
@@ -903,8 +913,8 @@ func (c *Client) verifyIdemixCredential() error {
 	return nil
 }
 
-func newCfsslBasicKeyRequest(bkr *api.BasicKeyRequest) *csr.BasicKeyRequest {
-	return &csr.BasicKeyRequest{A: bkr.Algo, S: bkr.Size}
+func newCfsslBasicKeyRequest(bkr *api.BasicKeyRequest) *csr.KeyRequest {
+	return &csr.KeyRequest{A: bkr.Algo, S: bkr.Size}
 }
 
 // NormalizeURL normalizes a URL (from cfssl)

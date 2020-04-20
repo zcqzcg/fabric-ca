@@ -17,14 +17,14 @@ import (
 	"github.com/Knetic/govaluate"
 	"github.com/cloudflare/cfssl/log"
 	"github.com/hyperledger/fabric-ca/api"
+	ctls "github.com/hyperledger/fabric-ca/lib/gmtls"
 	causer "github.com/hyperledger/fabric-ca/lib/server/user"
 	"github.com/hyperledger/fabric-ca/lib/spi"
-	ctls "github.com/hyperledger/fabric-ca/lib/tls"
 	"github.com/hyperledger/fabric-ca/util"
 	"github.com/hyperledger/fabric/bccsp"
 	"github.com/jmoiron/sqlx"
 	"github.com/pkg/errors"
-	ldap "gopkg.in/ldap.v2"
+	ldap "github.com/zcqzcg/ldap"
 )
 
 var (

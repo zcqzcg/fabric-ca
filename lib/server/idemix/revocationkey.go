@@ -8,13 +8,13 @@ package idemix
 
 import (
 	"crypto/ecdsa"
-	"crypto/x509"
 	"encoding/pem"
 	"io/ioutil"
 
 	"github.com/cloudflare/cfssl/log"
 	"github.com/hyperledger/fabric-ca/util"
 	"github.com/pkg/errors"
+	"github.com/zcqzcg/gmsm/sm2"
 )
 
 // RevocationKey represents issuer revocation public and private key
@@ -23,10 +23,10 @@ type RevocationKey interface {
 	Load() error
 	// Store stores this revocation key to the disk
 	Store() error
-	// GetKey returns *ecdsa.PrivateKey that represents revocation public and private key pair
-	GetKey() *ecdsa.PrivateKey
+	// GetKey returns *sm2.PrivateKey that represents revocation public and private key pair
+	GetKey() *sm2.PrivateKey
 	// SetKey sets revocation public and private key
-	SetKey(key *ecdsa.PrivateKey)
+	SetKey(key *sm2.PrivateKey)
 	// SetNewKey creates new revocation public and private key pair and sets them in this object
 	SetNewKey() error
 }
@@ -35,7 +35,7 @@ type RevocationKey interface {
 type caIdemixRevocationKey struct {
 	pubKeyFile     string
 	privateKeyFile string
-	key            *ecdsa.PrivateKey
+	key            *sm2.PrivateKey
 	idemixLib      Lib
 }
 
@@ -103,12 +103,12 @@ func (rk *caIdemixRevocationKey) Store() error {
 }
 
 // GetKey returns revocation key
-func (rk *caIdemixRevocationKey) GetKey() *ecdsa.PrivateKey {
+func (rk *caIdemixRevocationKey) GetKey() *sm2.PrivateKey {
 	return rk.key
 }
 
 // SetKey sets revocation key
-func (rk *caIdemixRevocationKey) SetKey(key *ecdsa.PrivateKey) {
+func (rk *caIdemixRevocationKey) SetKey(key *sm2.PrivateKey) {
 	rk.key = key
 }
 
@@ -119,14 +119,14 @@ func (rk *caIdemixRevocationKey) SetNewKey() (err error) {
 }
 
 // EncodeKeys encodes ECDSA key pair to PEM encoding
-func EncodeKeys(privateKey *ecdsa.PrivateKey, publicKey *ecdsa.PublicKey) ([]byte, []byte, error) {
-	encodedPK, err := x509.MarshalECPrivateKey(privateKey)
+func EncodeKeys(privateKey *sm2.PrivateKey, publicKey *sm2.PublicKey) ([]byte, []byte, error) {
+	encodedPK, err := sm2.MarshalSm2UnecryptedPrivateKey(privateKey)
 	if err != nil {
 		return nil, nil, errors.Wrap(err, "Failed to encode ECDSA private key")
 	}
 	pemEncodedPK := pem.EncodeToMemory(&pem.Block{Type: "PRIVATE KEY", Bytes: encodedPK})
 
-	encodedPubKey, err := x509.MarshalPKIXPublicKey(publicKey)
+	encodedPubKey, err := sm2.MarshalPKIXPublicKey(publicKey)
 	if err != nil {
 		return nil, nil, errors.Wrap(err, "Failed to encode ECDSA public key")
 	}
@@ -135,12 +135,12 @@ func EncodeKeys(privateKey *ecdsa.PrivateKey, publicKey *ecdsa.PublicKey) ([]byt
 }
 
 // DecodeKeys decodes ECDSA key pair that are pem encoded
-func DecodeKeys(pemEncodedPK, pemEncodedPubKey []byte) (*ecdsa.PrivateKey, *ecdsa.PublicKey, error) {
+func DecodeKeys(pemEncodedPK, pemEncodedPubKey []byte) (*sm2.PrivateKey, *sm2.PublicKey, error) {
 	block, _ := pem.Decode(pemEncodedPK)
 	if block == nil {
 		return nil, nil, errors.New("Failed to decode ECDSA private key")
 	}
-	pk, err := x509.ParseECPrivateKey(block.Bytes)
+	pk, err := sm2.ParsePKCS8UnecryptedPrivateKey(block.Bytes)
 	if err != nil {
 		return nil, nil, errors.Wrap(err, "Failed to parse ECDSA private key bytes")
 	}
@@ -148,11 +148,22 @@ func DecodeKeys(pemEncodedPK, pemEncodedPubKey []byte) (*ecdsa.PrivateKey, *ecds
 	if blockPub == nil {
 		return nil, nil, errors.New("Failed to decode ECDSA public key")
 	}
-	key, err := x509.ParsePKIXPublicKey(blockPub.Bytes)
+	key, err := sm2.ParsePKIXPublicKey(blockPub.Bytes)
 	if err != nil {
 		return nil, nil, errors.Wrap(err, "Failed to parse ECDSA public key bytes")
 	}
-	publicKey := key.(*ecdsa.PublicKey)
+	pub, _ := key.(*ecdsa.PublicKey)
+	switch pub.Curve {
+	case sm2.P256Sm2():
+		publicKey := &sm2.PublicKey{
+			X:     pub.X,
+			Y:     pub.Y,
+			Curve: pub.Curve,
+		}
+		return pk, publicKey, nil
+	default:
+		return pk, nil, errors.New("No GM PublicKey.")
+	}
 
-	return pk, publicKey, nil
+
 }

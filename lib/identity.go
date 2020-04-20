@@ -9,7 +9,8 @@ package lib
 import (
 	"encoding/json"
 	"fmt"
-	"net/http"
+	//"net/http"
+	http "github.com/hyperledger/fabric-ca/http-gm"
 	"strconv"
 
 	"github.com/cloudflare/cfssl/log"
