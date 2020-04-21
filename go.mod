@@ -41,4 +41,4 @@ require (
 	gopkg.in/yaml.v2 v2.2.8
 )
 
-replace github.com/hyperledger/fabric v2.1.0+incompatible => github.com/zcqzcg/fabric v1.4.61
+replace github.com/hyperledger/fabric v2.1.0+incompatible => github.com/zcqzcg/fabric v1.4.63
