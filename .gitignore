@@ -23,3 +23,7 @@ vendor/github.com/cloudflare/cfssl/vendor/github.com/cloudflare/cfssl_trust/ca-b
 # tox
 .tox/
 vendor
+/.idea/
+/cmd/fabric-ca-client/msp/
+/cmd/fabric-ca-server/msp/keystore/
+/cmd/fabric-ca-server/fabric-ca-server.db

@@ -7,7 +7,6 @@ SPDX-License-Identifier: Apache-2.0
 package idemix
 
 import (
-	"crypto/ecdsa"
 	"encoding/pem"
 	"io/ioutil"
 
@@ -148,11 +147,15 @@ func DecodeKeys(pemEncodedPK, pemEncodedPubKey []byte) (*sm2.PrivateKey, *sm2.Pu
 	if blockPub == nil {
 		return nil, nil, errors.New("Failed to decode ECDSA public key")
 	}
-	key, err := sm2.ParsePKIXPublicKey(blockPub.Bytes)
+	pub, err := sm2.ParseSm2PublicKey(blockPub.Bytes)
 	if err != nil {
-		return nil, nil, errors.Wrap(err, "Failed to parse ECDSA public key bytes")
+		return nil, nil, errors.Wrap(err, "Failed to parse SM2 public key bytes")
 	}
-	pub, _ := key.(*ecdsa.PublicKey)
+	//pub, ok := key.(*sm2.PublicKey)
+	//if !ok {
+	//	log.Warning(pub)
+	//	return nil, nil, errors.Wrap(err, "Failed to parse ECDSA public key bytes")
+	//}
 	switch pub.Curve {
 	case sm2.P256Sm2():
 		publicKey := &sm2.PublicKey{
