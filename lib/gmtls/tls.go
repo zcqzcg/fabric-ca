@@ -18,6 +18,7 @@ package gmtls
 
 import (
 	"io/ioutil"
+	"strings"
 	"time"
 
 	"github.com/pkg/errors"
@@ -168,12 +169,19 @@ func AbsTLSServer(cfg *ServerTLSConfig, configDir string) error {
 	return nil
 }
 
-func checkCertDates(certFile string) error {
+func checkCertDates(certFile string) (err error) {
 	log.Debug("Check client TLS certificate for valid dates")
-	certPEM, err := ioutil.ReadFile(certFile)
-	if err != nil {
-		return errors.Wrapf(err, "Failed to read file '%s'", certFile)
+	certPEM := []byte{}
+	if strings.Contains(certFile,"-----BEGIN") {
+		log.Debug("It's already in pem form.")
+		certPEM = []byte(certFile)
+	} else {
+		certPEM, err = ioutil.ReadFile(certFile)
+		if err != nil {
+			return errors.Wrapf(err, "Failed to read file '%s'", certFile)
+		}
 	}
+
 
 	cert, err := util.GetX509CertificateFromPEM(certPEM)
 	if err != nil {

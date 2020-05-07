@@ -133,7 +133,7 @@ func createGmSm2Cert(key bccsp.Key, req *csr.CertificateRequest, priv crypto.Sig
 func parseCertificateRequest(csrBytes []byte) (template *sm2.Certificate, err error) {
 	csrv, err := sm2.ParseCertificateRequest(csrBytes)
 	if err != nil {
-		//err = cferr.Wrap(cferr.CSRError, cferr.ParseFailed, err)
+		err = cferr.Wrap(cferr.CSRError, cferr.ParseFailed, err)
 		return
 	}
 	err = csrv.CheckSignature()

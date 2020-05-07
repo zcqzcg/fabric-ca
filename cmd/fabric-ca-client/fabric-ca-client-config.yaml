@@ -40,7 +40,7 @@
 #############################################################################
 
 # URL of the Fabric-ca-server (default: http://localhost:7054)
-url: https://ca.example.com:7054
+url: https://ca.org1.example.com:7054
 
 # Membership Service Provider (MSP) directory
 # This is useful when the client is used to enroll a peer or orderer, so
@@ -59,10 +59,10 @@ mspdir: msp
 #############################################################################
 tls:
   # TLS section for secure socket connection
-  certfiles:
+  certfiles: /home/david/fabric-samples/first-network/crypto-config/peerOrganizations/org1.example.com/ca/ca.org1.example.com-cert.pem
   client:
-    certfile:
-    keyfile:
+    certfile: /home/david/fabric-samples/first-network/crypto-config/peerOrganizations/org1.example.com/users/Admin@org1.example.com/tls/client.crt
+    keyfile: /home/david/fabric-samples/first-network/crypto-config/peerOrganizations/org1.example.com/users/Admin@org1.example.com/tls/client.key
 
 #############################################################################
 #  Certificate Signing Request section for generating the CSR for an
@@ -99,7 +99,7 @@ tls:
 #
 #############################################################################
 csr:
-  cn: ca.example.com
+  cn: ca.org1.example.com
   keyrequest:
     algo: gmsm2
     size: 256
@@ -146,7 +146,7 @@ enrollment:
 #############################################################################
 # Name of the CA to connect to within the fabric-ca server
 #############################################################################
-caname: ca.example.com
+caname: ca-org1
 
 #############################################################################
 # BCCSP (BlockChain Crypto Service Provider) section allows to select which
